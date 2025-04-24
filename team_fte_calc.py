@@ -11,96 +11,130 @@ st.title("📊 Team FTE Calculator")
 st.sidebar.header("📥 Input Variables")
 
 # --- Inputs from Sidebar ---
-internal_chargeability = st.sidebar.number_input("Internal Team Chargeability (decimal)", 0.0, 1.0, 0.88)
-external_chargeability = st.sidebar.number_input("External Team Chargeability (decimal)", 0.0, 1.0, 0.95)
+internal_chargeability = st.sidebar.number_input("Internal Engineer Team Anticipated Chargeability (decimal)", 0.0, 1.0, 0.88)
+external_chargeability = st.sidebar.number_input("External Engineer Team Anticipated Chargeability (decimal)", 0.0, 1.0, 0.95)
 
-internal_team_count = st.sidebar.number_input("Internal Tech Team Headcount", 0, 1000, 36)
-external_team_count = st.sidebar.number_input("External Tech Team Headcount", 0, 1000, 23)
+internal_team_count = st.sidebar.number_input("Internal Engineer Team Headcount", 0, 1000, 36)
+external_team_count = st.sidebar.number_input("External Engineer Team Headcount", 0, 1000, 23)
 
-client_tech_demand = st.sidebar.number_input("Client Tech Demand (FTEs)", 0, 1000, 47)
+client_engineer_demand = st.sidebar.number_input("Client Engineer Demand (FTEs)", 0, 1000, 47)
 
-internal_mgmt_count = st.sidebar.number_input("Internal Mgmt Team Headcount", 0, 1000, 26)
-external_mgmt_count = st.sidebar.number_input("External Mgmt Headcount", 0, 1000, 10)
+internal_nonengineer_count = st.sidebar.number_input("Internal Non-Engineer Team Headcount", 0, 1000, 26)
+external_nonengineer_count = st.sidebar.number_input("External Non-Engineer Headcount", 0, 1000, 10)
 
 total_team_demand = st.sidebar.number_input("Total Team Demand (Optional)", 0, 1000, 0)
 
 # --- Calculations ---
-tech_fte_supply = (internal_chargeability * internal_team_count) + (external_chargeability * external_team_count)
-tech_fte_delta = tech_fte_supply - client_tech_demand
-mgmt_ftes = (internal_chargeability * internal_mgmt_count) + (external_chargeability * external_mgmt_count)
-total_team_ftes = tech_fte_supply + mgmt_ftes
+engineer_fte_availability = (internal_chargeability * internal_team_count) + (external_chargeability * external_team_count)
+engineer_fte_delta = engineer_fte_availability - client_engineer_demand
+nonengineer_ftes = (internal_chargeability * internal_nonengineer_count) + (external_chargeability * external_nonengineer_count)
+total_team_ftes = engineer_fte_availability + nonengineer_ftes
 
-# Calculate deltas for internal tech team vs client tech demand and total tech team capacity vs client tech demand
-internal_tech_capacity = internal_chargeability * internal_team_count  # Internal Tech Capacity (Headcount * Chargeability)
-internal_fte_delta = internal_tech_capacity - client_tech_demand  # Capacity minus client tech demand
+# Additional calcs
+internal_engineer_availability = internal_chargeability * internal_team_count
+internal_fte_delta = internal_engineer_availability - client_engineer_demand
 
-# Total Tech Team FTEs minus client tech demand
-total_fte_delta = tech_fte_supply - client_tech_demand
+total_engineer_headcount = internal_team_count + external_team_count
+total_nonengineer_headcount = internal_nonengineer_count + external_nonengineer_count
+internal_engineer_headcount_delta = internal_team_count - client_engineer_demand
+total_engineer_headcount_delta = total_engineer_headcount - client_engineer_demand
+
+# Helper for delta formatting
+def format_delta(val):
+    return f"+{val:.2f}" if val > 0 else f"{val:.2f}"
 
 # --- Dashboard Summary ---
 st.subheader("📋 Dashboard Summary")
 
-col1, col2, col3 = st.columns(3)
-col1.metric("Tech FTE Capacity", f"{tech_fte_supply:.2f}")
-col2.metric("Tech Capacity vs Demand FTE Delta", f"{tech_fte_delta:.2f}")
-col3.metric("Mgmt FTE Capacity", f"{mgmt_ftes:.2f}")
+with st.container():
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Engineer FTE Availability", f"{engineer_fte_availability:.2f}")
+    col2.metric("Engineer vs Demand Availability FTE Delta", None, format_delta(engineer_fte_delta), delta_color="normal")
+    col3.metric("Non-Engineer FTE Availability", f"{nonengineer_ftes:.2f}")
 
-# Added Client Tech Demand Metric
-col4, col5 = st.columns(2)
-col4.metric("Total Team FTE Capacity (Tech + Mgmt)", f"{total_team_ftes:.2f}")
+with st.container():
+    col4, col5, col6 = st.columns(3)
+    col4.metric("Total Team FTE Availability", f"{total_team_ftes:.2f}")
+    col5.metric("Client Engineer Demand (FTEs)", f"{client_engineer_demand:.2f}")
+    col6.metric("Internal Engineer Availability FTE vs Demand Delta", None, format_delta(internal_fte_delta), delta_color="normal")
 
-# Aligning Client Tech Demand with other metrics in the columns
-col6, _ = st.columns([3, 1])
-col6.metric("Client Tech Demand (FTEs)", f"{client_tech_demand:.2f}")
+with st.container():
+    col7, col8, col9 = st.columns(3)
+    col7.metric("Engineer Headcount Total", total_engineer_headcount)
+    col8.metric("Non-Engineer Headcount Total", total_nonengineer_headcount)
+    col9.metric("Internal Engineer Headcount vs Demand", None, format_delta(internal_engineer_headcount_delta), delta_color="normal")
 
-# Added the new deltas for the dashboard
-col7, col8 = st.columns(2)
-col7.metric("Internal Tech vs Client Tech Demand FTE Delta", f"{internal_fte_delta:.2f}")
+with st.container():
+    col10, _, _ = st.columns(3)
+    col10.metric("Total Engineer Headcount vs Demand", None, format_delta(total_engineer_headcount_delta), delta_color="normal")
 
+# Adding Internal Engineer Headcount Total Metric
+with st.container():
+    col11, _, _ = st.columns(3)
+    col11.metric("Internal Engineer Headcount Total", internal_team_count)
 # --- Program Headcount Chart ---
 st.subheader("📊 Program Headcount Breakdown")
 
 headcount_data = pd.DataFrame({
-    "Category": ["Internal Team", "External Team", "Internal Mgmt", "External Mgmt"],
-    "Headcount": [internal_team_count, external_team_count, internal_mgmt_count, external_mgmt_count]
+    "Category": ["Internal Engineer", "External Engineer", "Internal Non-Engineer", "External Non-Engineer"],
+    "Headcount": [internal_team_count, external_team_count, internal_nonengineer_count, external_nonengineer_count]
 })
 
-# Generate gradient colors for each category (purple shades)
-purple_colors = ['#6A1B9A', '#8E24AA', '#9C4D97', '#AB47BC']
+fig, ax = plt.subplots(figsize=(8, 5))
+bars = ax.bar(headcount_data["Category"], headcount_data["Headcount"], color=['#6A1B9A', '#8E24AA', '#9C4D97', '#AB47BC'])
 
-fig, ax = plt.subplots()
-bars = ax.bar(headcount_data["Category"], headcount_data["Headcount"], color=purple_colors)
-
-# Add data labels above each bar
 for bar in bars:
     yval = bar.get_height()
     ax.text(bar.get_x() + bar.get_width() / 2, yval + 0.1, f'{yval:.0f}', ha='center', va='bottom', fontsize=12)
 
 ax.set_ylabel("Headcount")
 ax.set_title("Program Headcount")
+plt.xticks(rotation=20, ha='right')
 st.pyplot(fig)
 
-# --- Program Delivery FTE Delta Chart ---
-st.subheader("📊 Program Delivery FTE Delta")
+# --- Engineer Availability Delta Chart ---
+st.subheader("📊 Engineer Capacity Delta")
 
-# Generate data for the deltas
 fte_deltas = pd.DataFrame({
-    "Category": ["Internal Tech FTE Delta", "Total Tech FTE Delta"],
-    "FTE Delta": [internal_fte_delta, total_fte_delta]
+    "Category": ["Internal Engineer Headcount vs Demand", "Total Engineer Headcount vs Demand"],
+    "FTE Delta": [internal_engineer_headcount_delta, total_engineer_headcount_delta]
 })
 
-fig, ax = plt.subplots()
-
-# Bar plot for FTE Deltas
+fig, ax = plt.subplots(figsize=(8, 4))
 bars = ax.bar(fte_deltas["Category"], fte_deltas["FTE Delta"], color=['#BDBDBD', '#757575'])
 
-# Add data labels above each bar
 for bar in bars:
     yval = bar.get_height()
-    ax.text(bar.get_x() + bar.get_width() / 2, yval + 0.1, f'{yval:.2f}', ha='center', va='bottom', fontsize=12)
+    ax.text(bar.get_x() + bar.get_width() / 2, yval + 0.2 if yval >= 0 else yval - 0.4, f'{yval:.2f}', ha='center', va='bottom', fontsize=12)
 
 ax.set_ylabel("FTE Delta")
-ax.set_title("Program Delivery FTE Delta")
+ax.set_title("Engineer Capacity Delta")
+plt.xticks(rotation=15, ha='right')
+st.pyplot(fig)
+
+# --- Engineer Availability vs Demand Delta Chart ---
+st.subheader("📊 Engineer Availability vs Demand Delta")
+
+availability_deltas = pd.DataFrame({
+    "Category": [
+        "Internal Engineer Availability vs Demand",
+        "Total Engineer Availability vs Demand"
+    ],
+    "Availability Delta": [internal_fte_delta, engineer_fte_delta]
+})
+
+fig, ax = plt.subplots(figsize=(8, 4))
+bars = ax.bar(availability_deltas["Category"], availability_deltas["Availability Delta"], color=['#90CAF9', '#42A5F5'])
+
+for bar in bars:
+    yval = bar.get_height()
+    ax.text(bar.get_x() + bar.get_width() / 2,
+            yval + 0.2 if yval >= 0 else yval - 0.4,
+            f'{yval:.2f}', ha='center', va='bottom', fontsize=12)
+
+ax.set_ylabel("FTE Delta")
+ax.set_title("Engineer Availability vs Demand Delta")
+plt.xticks(rotation=15, ha='right')
 st.pyplot(fig)
 
 # --- Export Section ---
@@ -109,20 +143,20 @@ st.subheader("⬇️ Export Data")
 export_data = {
     "Metric": [
         "Internal Chargeability", "External Chargeability",
-        "Internal Team Headcount", "External Team Headcount",
-        "Client Tech Demand", "Internal Mgmt", "External Mgmt",
-        "Tech FTE Supply", "Tech FTE Delta",
-        "Mgmt FTEs", "Total Team FTEs", "Total FTE Delta",
-        "Internal Tech FTE Delta (vs Client Tech Demand)",
-        "Total Tech FTE Delta (vs Client Tech Demand)"
+        "Internal Engineer Headcount", "External Engineer Headcount",
+        "Client Engineer Demand", "Internal Non-Engineer", "External Non-Engineer",
+        "Engineer FTE Availability", "Engineer FTE Delta",
+        "Non-Engineer FTEs", "Total Team FTEs",
+        "Internal Engineer FTE Delta (vs Client Demand)",
+        "Total Engineer Headcount Delta", "Internal Engineer Headcount Delta"
     ],
     "Value": [
         internal_chargeability, external_chargeability,
         internal_team_count, external_team_count,
-        client_tech_demand, internal_mgmt_count, external_mgmt_count,
-        tech_fte_supply, tech_fte_delta,
-        mgmt_ftes, total_team_ftes, total_fte_delta if total_fte_delta else "N/A",
-        internal_fte_delta, total_fte_delta
+        client_engineer_demand, internal_nonengineer_count, external_nonengineer_count,
+        engineer_fte_availability, engineer_fte_delta,
+        nonengineer_ftes, total_team_ftes,
+        internal_fte_delta, total_engineer_headcount_delta, internal_engineer_headcount_delta
     ]
 }
 
