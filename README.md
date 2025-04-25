@@ -1,6 +1,6 @@
 # Team FTE Calculator
 
-📊 **Team FTE Calculator** is a web-based application built with **Streamlit** that helps users calculate and visualize FTE (Full-Time Equivalent) metrics for internal and external teams. This tool assists in determining the capacity, delta, and demand for tech and management teams in a program or project.
+📊 **Team FTE Calculator** is a web-based application built with **Streamlit** that helps users calculate and visualize FTE (Full-Time Equivalent) metrics for internal and external teams. This tool assists in determining the capacity, delta, and demand for engineers and management teams in a program or project.
 
 ## Features
 - **Input Variables:**
@@ -8,13 +8,15 @@
   - Internal and external team headcount
   - Client demand (FTEs)
   - Internal and external management team headcount
+  - Internal and external engineering team headcount
   - Total team demand (optional)
 - **FTE Calculation:**
-  - Tech FTE capacity, management FTE capacity, and total team FTE capacity
+  - Engineer FTE capacity, PM (management) FTE capacity, and total team FTE capacity
   - Delta between team capacity and client demand
 - **Visualizations:**
   - Program headcount chart with custom purple color gradient
-  - Program delivery FTE delta chart, showing internal tech and total team FTEs vs client demand, with color adjustments for clarity
+  - Program delivery capacity FTE delta chart, showing internal engineer and total team FTEs vs client demand, with color adjustments for clarity
+  - Program delivery availability FTE delta chart, showing internal engineer and total team FTEs vs client demand
 - **Export Data:**
   - Option to download calculated data as a CSV or Excel file
 
